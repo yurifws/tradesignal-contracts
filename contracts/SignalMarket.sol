@@ -49,6 +49,29 @@ contract SignalMarket {
         protocolFeePercent = 5;
     }
 
-    
+    function createSignal(
+        string memory _asset,
+        uint256 _targetPrice,
+        uint256 _deadline,
+        Direction _direction,
+        uint256 _fee,
+        string memory _analysis
+    ) public payable {
+        require(msg.value >= listingFee, "Must pay listing fee");
+        require(_deadline > block.timestamp, "Deadline must be in the future");
+
+        signals[nextSignalId] = Signal({
+            trader: msg.sender,       
+            direction: _direction,     
+            status: SignalStatus.Active,     
+            isCorrect: false,    
+            id: nextSignalId,            
+            targetPrice: _targetPrice,  
+            deadline: _deadline,     
+            fee: _fee,          
+            asset: _asset,       
+            analysis: _analysis     
+        })
+    }
 
 }
