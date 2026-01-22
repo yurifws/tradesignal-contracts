@@ -1,5 +1,8 @@
 pragma solidity ^0.8.20;
 
+import "@chainlink/contracts/src/v0.8/interfaces/AggregatorV3Interface.sol";
+
+
 contract SignalMarket {
 
     enum Direction { 
@@ -42,11 +45,14 @@ contract SignalMarket {
     uint256 public listingFee;
     uint256 public protocolFeePercent;
     address public owner;
+    
+    AggregatorV3Interface public priceFeed;
 
-    constructor() {
+    constructor(address _priceFeed) {
         owner = msg.sender;
         listingFee = 0.001 ether;
         protocolFeePercent = 5;
+        priceFeed = AggregatorV3Interface(_priceFeed);
     }
 
     function createSignal(
@@ -70,7 +76,10 @@ contract SignalMarket {
             fee: _fee,          
             asset: _asset,       
             analysis: _analysis     
-        })
+        });
+
+        nextSignalId++;
+        traderStats[msg.sender].totalSignals++;
     }
 
     function purchaseSignal(uint256 signalId) public payable {
@@ -92,6 +101,27 @@ contract SignalMarket {
         return signals[signalId].analysis;
     }
 
-    
+    function resolveSignal(uint256 signalId) public {
+
+        require(signals[signalId].deadline <= block.timestamp, "Deadline not passed yet");
+        require(SignalStatus.Active == signals[signalId].status, "Signal is not active");
+
+        (, int price, , , ) = priceFeed.latestRoundData();
+        uint256 currentPrice = uint256(price) / 1e8;
+
+        bool isCorrect;
+        if(signals[signalId].direction == Direction.Bullish){
+            isCorrect = currentPrice >= signals[signalId].targetPrice;
+        } else {
+            isCorrect = currentPrice <= signals[signalId].targetPrice;
+        }
+
+        signals[signalId].status = SignalStatus.Resolved;
+        signals[signalId].isCorrect = isCorrect;
+
+        if(isCorrect){
+            traderStats[signals[signalId].trader].correctSignals++;
+        }
+    }
 
 }
