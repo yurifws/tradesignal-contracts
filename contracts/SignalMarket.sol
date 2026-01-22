@@ -55,8 +55,7 @@ contract SignalMarket {
         uint256 _deadline,
         Direction _direction,
         uint256 _fee,
-        string memory _analysis
-    ) public payable {
+        string memory _analysis) public payable {
         require(msg.value >= listingFee, "Must pay listing fee");
         require(_deadline > block.timestamp, "Deadline must be in the future");
 
@@ -72,6 +71,19 @@ contract SignalMarket {
             asset: _asset,       
             analysis: _analysis     
         })
+    }
+
+    function purchaseSignal(uint256 signalId) public payable {
+        require(signalId < nextSignalId, "Signal does not exist");
+        require(SignalStatus.Active == signals[signalId].status, "Signal is not active");
+        require(signalAccess[signalId][msg.sender] == false, "Already purchased");
+        require(msg.value >= signals[signalId].fee, "Incorrect payment amount");
+
+        uint256 protocolCut = (msg.value * protocolFeePercent) / 100;
+        uint256 traderCut = msg.value - protocolCut;
+        
+        signalAccess[signalId][msg.sender] = true;
+        payable(signals[signalId].trader).transfer(traderCut);
     }
 
 }
