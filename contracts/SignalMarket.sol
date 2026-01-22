@@ -24,6 +24,7 @@ contract SignalMarket {
         uint256 deadline;
         uint256 fee;
         string asset;
+        string analysis;
     }
 
     mapping(uint256 => Signal) public signals;
@@ -35,5 +36,19 @@ contract SignalMarket {
     }
 
     mapping(address => TraderStats) public traderStats;
+
+    mapping(uint256 => mapping(address => bool)) public signalAccess;
+
+    uint256 public listingFee;
+    uint256 public protocolFeePercent;
+    address public owner;
+
+    constructor() {
+        owner = msg.sender;
+        listingFee = 0.001 ether;
+        protocolFeePercent = 5;
+    }
+
+    
 
 }
