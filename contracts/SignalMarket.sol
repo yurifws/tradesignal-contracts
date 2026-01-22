@@ -29,4 +29,11 @@ contract SignalMarket {
     mapping(uint256 => Signal) public signals;
     uint256 public nextSignalId;
 
+    struct TraderStats {
+        uint256 totalSignals;
+        uint256 correctSignals;
+    }
+
+    mapping(address => TraderStats) public traderStats;
+
 }
