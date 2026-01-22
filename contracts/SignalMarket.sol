@@ -86,4 +86,12 @@ contract SignalMarket {
         payable(signals[signalId].trader).transfer(traderCut);
     }
 
+    function getSignalAnalysis(uint256 signalId) public view returns (string memory) {
+        require(signalAccess[signalId][msg.sender] == true, "Must purchase signal first");
+
+        return signals[signalId].analysis;
+    }
+
+    
+
 }
