@@ -1,6 +1,58 @@
-node_modules
-.env
-
+# Hardhat
+node_modules/
 cache/
 artifacts/
 typechain-types/
+
+# Hardhat Network
+.hardhat/
+
+# Compilação
+coverage/
+coverage.json
+
+# Typechain
+typechain/
+
+# Dependências
+package-lock.json
+yarn.lock
+
+# Variáveis de ambiente
+.env
+.env.local
+.env.*.local
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Arquivos do sistema operacional
+.DS_Store
+Thumbs.db
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Testes
+*.gas-snapshot
+
+# Deployments (opcional - remova se quiser versionar)
+deployments/localhost/
+deployments/hardhat/
+
+# Flatten
+flattened.sol
+flatten/
+
+# Gas reports
+gasReporterOutput.json
+
+# Slither
+.slither/
