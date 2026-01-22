@@ -1,9 +1,10 @@
 pragma solidity ^0.8.20;
 
 import "@chainlink/contracts/src/v0.8/interfaces/AggregatorV3Interface.sol";
+import "@openzeppelin/contracts/access/Ownable.sol"; 
 
 
-contract SignalMarket {
+contract SignalMarket is Ownable {
 
     enum Direction { 
         Bullish, 
@@ -44,12 +45,10 @@ contract SignalMarket {
 
     uint256 public listingFee;
     uint256 public protocolFeePercent;
-    address public owner;
     
     AggregatorV3Interface public priceFeed;
 
-    constructor(address _priceFeed) {
-        owner = msg.sender;
+    constructor(address _priceFeed) Ownable(msg.sender) {
         listingFee = 0.001 ether;
         protocolFeePercent = 5;
         priceFeed = AggregatorV3Interface(_priceFeed);
@@ -130,6 +129,11 @@ contract SignalMarket {
         require(msg.sender == signals[signalId].trader, "Only trader can cancel");
 
         signals[signalId].status = SignalStatus.Cancelled;
+    }
+
+    function withdrawProtocolFees() public onlyOwner() {
+        uint256 balance = address(this).balance;
+        payable(owner()).transfer(balance);
     }
 
 }
