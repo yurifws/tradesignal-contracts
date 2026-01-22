@@ -55,6 +55,11 @@ contract SignalMarket {
         priceFeed = AggregatorV3Interface(_priceFeed);
     }
 
+    modifier onlyActive(uint256 signalId) {
+        require(signals[signalId].status == SignalStatus.Active, "Signal is not active");
+        _;  
+    }
+
     function createSignal(
         string memory _asset,
         uint256 _targetPrice,
@@ -82,9 +87,8 @@ contract SignalMarket {
         traderStats[msg.sender].totalSignals++;
     }
 
-    function purchaseSignal(uint256 signalId) public payable {
+    function purchaseSignal(uint256 signalId) public payable onlyActive(signalId) {
         require(signalId < nextSignalId, "Signal does not exist");
-        require(SignalStatus.Active == signals[signalId].status, "Signal is not active");
         require(signalAccess[signalId][msg.sender] == false, "Already purchased");
         require(msg.value >= signals[signalId].fee, "Incorrect payment amount");
 
@@ -101,10 +105,8 @@ contract SignalMarket {
         return signals[signalId].analysis;
     }
 
-    function resolveSignal(uint256 signalId) public {
-
+    function resolveSignal(uint256 signalId) public onlyActive(signalId) {
         require(signals[signalId].deadline <= block.timestamp, "Deadline not passed yet");
-        require(SignalStatus.Active == signals[signalId].status, "Signal is not active");
 
         (, int price, , , ) = priceFeed.latestRoundData();
         uint256 currentPrice = uint256(price) / 1e8;
@@ -122,6 +124,12 @@ contract SignalMarket {
         if(isCorrect){
             traderStats[signals[signalId].trader].correctSignals++;
         }
+    }
+
+    function cancelSignal(uint256 signalId) public onlyActive(signalId) {
+        require(msg.sender == signals[signalId].trader, "Only trader can cancel");
+
+        signals[signalId].status = SignalStatus.Cancelled;
     }
 
 }
