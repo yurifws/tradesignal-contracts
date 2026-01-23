@@ -49,6 +49,36 @@ contract SignalMarket is Ownable {
     
     AggregatorV3Interface public priceFeed;
 
+    event SignalCreated(
+        uint256 indexed signalId, 
+        address indexed trader, 
+        string asset,
+        uint256 targetPrice,
+        uint256 deadline
+    );
+
+    event SignalPurchased(
+        uint256 indexed signalId, 
+        address indexed buyer,
+        uint256 amount
+    );
+
+    event SignalResolved(
+        uint256 indexed signalId, 
+        bool isCorrect,
+        uint256 finalPrice
+    );
+
+    event SignalCancelled(
+        uint256 indexed signalId,
+        address indexed trader
+    );
+
+    event ProtocolFeesWithdrawn(
+        address indexed owner,
+        uint256 amount
+    );
+
     constructor(address _priceFeed) Ownable(msg.sender) {
         listingFee = 0.001 ether;
         protocolFeePercent = 5;
@@ -85,6 +115,7 @@ contract SignalMarket is Ownable {
 
         nextSignalId++;
         traderStats[msg.sender].totalSignals++;
+        emit SignalCreated(nextSignalId, msg.sender, _asset, _targetPrice, _deadline);
     }
 
     function purchaseSignal(uint256 signalId) public payable onlyActive(signalId) {
@@ -97,6 +128,8 @@ contract SignalMarket is Ownable {
         
         signalAccess[signalId][msg.sender] = true;
         payable(signals[signalId].trader).transfer(traderCut);
+
+        emit SignalPurchased(signalId, msg.sender, msg.value);
     }
 
     function getSignalAnalysis(uint256 signalId) public view returns (string memory) {
@@ -124,17 +157,22 @@ contract SignalMarket is Ownable {
         if(isCorrect){
             traderStats[signals[signalId].trader].correctSignals++;
         }
+        emit SignalResolved( signalId, isCorrect, currentPrice);
     }
 
     function cancelSignal(uint256 signalId) public onlyActive(signalId) {
         require(msg.sender == signals[signalId].trader, "Only trader can cancel");
 
         signals[signalId].status = SignalStatus.Cancelled;
+
+        emit SignalCancelled(signalId, msg.sender);
     }
 
     function withdrawProtocolFees() public onlyOwner() {
         uint256 balance = address(this).balance;
         payable(owner()).transfer(balance);
+
+        emit ProtocolFeesWithdrawn( msg.sender, balance);
     }
 
 }
