@@ -108,4 +108,48 @@ program
     }
   });
 
+// LIST command
+program
+  .command("list")
+  .description("List all active signals")
+  .action(async () => {
+    try {
+      console.log(chalk.blue("\Active Signals\n"));
+
+      const nextId = await contract.nextSignalId();
+      
+      if (nextId === 0n) {
+        console.log(chalk.yellow("No signals yet!"));
+        return;
+      }
+
+      console.log(chalk.gray("─".repeat(80)));
+      
+      for (let i = 0n; i < nextId; i++) {
+        const signal = await contract.signals(i);
+        
+        // Only show active signals
+        if (signal.status !== 0n) continue;
+
+        const direction = signal.direction === 0 ? "Bullish" : "Bearish";
+        const deadline = new Date(Number(signal.deadline) * 1000).toLocaleDateString();
+        
+        console.log(
+          chalk.cyan(`ID ${i}:`),
+          chalk.white(signal.asset),
+          "→",
+          chalk.yellow(`$${signal.targetPrice}`),
+          direction,
+          chalk.gray(`| Fee: ${ethers.formatEther(signal.fee)} ETH`),
+          chalk.gray(`| Deadline: ${deadline}`)
+        );
+      }
+      
+      console.log(chalk.gray("─".repeat(80)));
+
+    } catch (error) {
+      console.error(chalk.red("\Error:"), error.message);
+    }
+  });
+
 program.parse();
