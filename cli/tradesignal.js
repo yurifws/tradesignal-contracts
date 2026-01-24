@@ -152,4 +152,71 @@ program
     }
   });
 
+// BUY command
+program
+  .command("buy")
+  .description("Purchase a signal")
+  .requiredOption("-i, --id <number>", "Signal ID")
+  .action(async (options) => {
+    try {
+      const signalId = parseInt(options.id);
+      
+      console.log(chalk.blue(`\nPurchasing Signal #${signalId}\n`));
+
+      // Get signal details
+      const signal = await contract.signals(signalId);
+      
+      if (signal.status !== 0n) {
+        console.log(chalk.red("Signal is not active!"));
+        return;
+      }
+
+      // Check if already purchased
+      const hasAccess = await contract.signalAccess(signalId, wallet.address);
+      if (hasAccess) {
+        console.log(chalk.yellow("You already own this signal!"));
+        return;
+      }
+
+      const fee = ethers.formatEther(signal.fee);
+      
+      console.log(chalk.cyan("Asset:"), signal.asset);
+      console.log(chalk.cyan("Target:"), `$${signal.targetPrice}`);
+      console.log(chalk.cyan("Direction:"), signal.direction === 0 ? "Bullish" : "Bearish");
+      console.log(chalk.cyan("Fee:"), `${fee} ETH\n`);
+
+      // Confirm purchase
+      const { confirm } = await inquirer.prompt([
+        {
+          type: "confirm",
+          name: "confirm",
+          message: `Purchase for ${fee} ETH?`,
+          default: false
+        }
+      ]);
+
+      if (!confirm) {
+        console.log(chalk.yellow("Purchase cancelled"));
+        return;
+      }
+
+      const spinner = ora("Processing purchase...").start();
+
+      const tx = await contract.purchaseSignal(signalId, {
+        value: signal.fee,
+        gasLimit: 300000
+      });
+
+      spinner.text = "Waiting for confirmation...";
+      await tx.wait();
+
+      spinner.succeed(chalk.green("Signal purchased!"));
+      console.log(chalk.cyan("Access granted to analysis"));
+      console.log(chalk.cyan("Transaction:"), `https://sepolia.etherscan.io/tx/${tx.hash}`);
+
+    } catch (error) {
+      console.error(chalk.red("\nError:"), error.message);
+    }
+  });
+
 program.parse();
