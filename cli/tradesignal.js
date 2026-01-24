@@ -135,14 +135,14 @@ program
         const deadline = new Date(Number(signal.deadline) * 1000).toLocaleDateString();
         
         console.log(
-          chalk.cyan(`ID ${i}:`),
-          chalk.white(signal.asset),
-          "→",
-          chalk.yellow(`$${signal.targetPrice}`),
-          direction,
-          chalk.gray(`| Fee: ${ethers.formatEther(signal.fee)} ETH`),
-          chalk.gray(`| Deadline: ${deadline}`)
-        );
+            chalk.cyan(`ID ${i}:`),
+            chalk.white(signal.asset),
+            "→",
+            chalk.yellow(`$${signal.targetPrice}`),
+            direction,
+            chalk.gray(`| Trader: ${signal.trader.slice(0,6)}...${signal.trader.slice(-4)}`),
+            chalk.gray(`| Fee: ${ethers.formatEther(signal.fee)} ETH`)
+);
       }
       
       console.log(chalk.gray("─".repeat(80)));
@@ -255,6 +255,43 @@ program
       console.log(chalk.white("\nAnalysis:\n"));
       console.log(chalk.green(analysis));
       console.log(chalk.gray("\n" + "─".repeat(80)));
+
+    } catch (error) {
+      console.error(chalk.red("\nError:"), error.message);
+    }
+  });
+
+// STATS command
+program
+  .command("stats")
+  .description("View trader statistics")
+  .option("-a, --address <address>", "Trader address (default: yours)")
+  .action(async (options) => {
+    try {
+      const address = options.address || wallet.address;
+    
+      const stats = await contract.traderStats(address);
+      
+      const total = Number(stats.totalSignals);
+      const correct = Number(stats.correctSignals);
+      const winRate = total > 0 ? ((correct / total) * 100).toFixed(2) : 0;
+
+      console.log(chalk.gray("─".repeat(50)));
+      console.log(chalk.cyan("Address:"), wallet.address);
+      console.log(chalk.cyan("Total Signals:"), total);
+      console.log(chalk.cyan("Correct Signals:"), correct);
+      console.log(chalk.cyan("Win Rate:"), `${winRate}%`);
+      console.log(chalk.gray("─".repeat(50)));
+
+      if (winRate >= 70) {
+        console.log(chalk.green("\nExcellent trader!"));
+      } else if (winRate >= 50) {
+        console.log(chalk.yellow("\nGood performance!"));
+      } else if (total > 0) {
+        console.log(chalk.red("\nNeed improvement!"));
+      } else {
+        console.log(chalk.blue("\nCreate your first signal!"));
+      }
 
     } catch (error) {
       console.error(chalk.red("\nError:"), error.message);
