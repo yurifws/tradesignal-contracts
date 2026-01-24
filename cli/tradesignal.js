@@ -298,4 +298,83 @@ program
     }
   });
 
+  // RESOLVE command
+program
+  .command("resolve")
+  .description("Resolve a signal using Chainlink oracle")
+  .requiredOption("-i, --id <number>", "Signal ID")
+  .action(async (options) => {
+    try {
+      const signalId = parseInt(options.id);
+      
+      console.log(chalk.blue(`\nResolving Signal #${signalId}\n`));
+
+      const signal = await contract.signals(signalId);
+      
+      // Check if already resolved
+      if (signal.status !== 0n) {
+        console.log(chalk.yellow("Signal is not active!"));
+        console.log(chalk.gray(`Status: ${["Active", "Resolved", "Expired", "Cancelled"][Number(signal.status)]}`));
+        return;
+      }
+
+      // Check if deadline passed
+      const now = BigInt(Math.floor(Date.now() / 1000));
+      if (signal.deadline > now) {
+        const remaining = Number(signal.deadline - now);
+        const hours = Math.floor(remaining / 3600);
+        const minutes = Math.floor((remaining % 3600) / 60);
+        const seconds = remaining % 60;
+
+        let timeMsg;
+        if (hours > 0) {
+            timeMsg = `${hours}h ${minutes}m remaining`;
+        } else if (minutes > 0) {
+            timeMsg = `${minutes}m ${seconds}s remaining`;
+        } else {
+            timeMsg = `${seconds}s remaining`;
+        }
+
+        console.log(chalk.yellow(`Deadline not passed yet! ${timeMsg}`));
+        return;
+      }
+
+      console.log(chalk.cyan("Asset:"), signal.asset);
+      console.log(chalk.cyan("Target:"), `$${signal.targetPrice}`);
+      console.log(chalk.cyan("Direction:"), signal.direction === 0 ? "Bullish" : "Bearish");
+
+      const spinner = ora("Checking price with Chainlink oracle...").start();
+
+      const tx = await contract.resolveSignal(signalId, {
+        gasLimit: 300000
+      });
+
+      spinner.text = "Waiting for confirmation...";
+      await tx.wait();
+
+      // Get updated signal
+      const updatedSignal = await contract.signals(signalId);
+      
+      spinner.succeed(chalk.green("Signal resolved!"));
+      
+      console.log(chalk.cyan("\nResult:"));
+      console.log(chalk.cyan("Status:"), "Resolved");
+      console.log(
+        updatedSignal.isCorrect 
+          ? chalk.green("Prediction was CORRECT!") 
+          : chalk.red("Prediction was INCORRECT")
+      );
+      console.log(chalk.cyan("Transaction:"), `https://sepolia.etherscan.io/tx/${tx.hash}`);
+
+      // Show updated trader stats
+      const stats = await contract.traderStats(signal.trader);
+      const winRate = ((Number(stats.correctSignals) / Number(stats.totalSignals)) * 100).toFixed(2);
+      console.log(chalk.cyan("\nTrader Stats Updated:"));
+      console.log(chalk.cyan("Win Rate:"), `${winRate}%`);
+
+    } catch (error) {
+      console.error(chalk.red("\nError:"), error.message);
+    }
+  });
+
 program.parse();
