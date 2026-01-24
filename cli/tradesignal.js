@@ -74,7 +74,7 @@ program
 
       // Calculate deadline
       const deadline = Math.floor(Date.now() / 1000) + (answers.days * 24 * 60 * 60);
-      const direction = answers.direction === "Bullish" ? 0 : 1;
+      const direction = answers.direction == "Bullish" ? 0 : 1;
 
       // Show spinner
       const spinner = ora("Creating signal...").start();
@@ -110,7 +110,7 @@ program
 
 // LIST command
 program
-  .command("list")
+  .command("list_actives")
   .description("List all active signals")
   .action(async () => {
     try {
@@ -131,7 +131,7 @@ program
         // Only show active signals
         if (signal.status !== 0n) continue;
 
-        const direction = signal.direction === 0 ? "Bullish" : "Bearish";
+        const direction = signal.direction == 0 ? "Bullish" : "Bearish";
         const deadline = new Date(Number(signal.deadline) * 1000).toLocaleDateString();
         
         console.log(
@@ -142,7 +142,7 @@ program
             direction,
             chalk.gray(`| Trader: ${signal.trader.slice(0,6)}...${signal.trader.slice(-4)}`),
             chalk.gray(`| Fee: ${ethers.formatEther(signal.fee)} ETH`)
-);
+        );
       }
       
       console.log(chalk.gray("─".repeat(80)));
@@ -182,7 +182,7 @@ program
       
       console.log(chalk.cyan("Asset:"), signal.asset);
       console.log(chalk.cyan("Target:"), `$${signal.targetPrice}`);
-      console.log(chalk.cyan("Direction:"), signal.direction === 0 ? "Bullish" : "Bearish");
+      console.log(chalk.cyan("Direction:"), signal.direction == 0 ? "Bullish" : "Bearish");
       console.log(chalk.cyan("Fee:"), `${fee} ETH\n`);
 
       // Confirm purchase
@@ -249,7 +249,7 @@ program
       console.log(chalk.gray("─".repeat(80)));
       console.log(chalk.cyan("Asset:"), signal.asset);
       console.log(chalk.cyan("Target:"), `$${signal.targetPrice}`);
-      console.log(chalk.cyan("Direction:"), signal.direction === 0 ? "Bullish" : "Bearish");
+      console.log(chalk.cyan("Direction:"), signal.direction == 0 ? "Bullish" : "Bearish");
       console.log(chalk.cyan("Trader:"), signal.trader);
       console.log(chalk.gray("─".repeat(80)));
       console.log(chalk.white("\nAnalysis:\n"));
@@ -341,7 +341,7 @@ program
 
       console.log(chalk.cyan("Asset:"), signal.asset);
       console.log(chalk.cyan("Target:"), `$${signal.targetPrice}`);
-      console.log(chalk.cyan("Direction:"), signal.direction === 0 ? "Bullish" : "Bearish");
+      console.log(chalk.cyan("Direction:"), signal.direction == 0 ? "Bullish" : "Bearish");
 
       const spinner = ora("Checking price with Chainlink oracle...").start();
 

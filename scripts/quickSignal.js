@@ -10,7 +10,7 @@ async function main() {
   
   const tx = await SignalMarket.createSignal(
     "ETH",
-    3200,
+    2500,
     deadline,
     0,  // Bullish
     hre.ethers.parseEther("0.01"),

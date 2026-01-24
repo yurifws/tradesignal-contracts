@@ -2,7 +2,7 @@ const hre = require("hardhat");
 
 async function main() {
   const contractAddress = "0x23ae9ee257069cCcDa0157e2941D5D8ba4394B47";
-  const signalId = 1; // The signal we just created
+  const signalId = 1; 
   
   const SignalMarket = await hre.ethers.getContractAt("SignalMarket", contractAddress);
   

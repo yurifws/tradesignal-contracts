@@ -112,10 +112,10 @@ contract SignalMarket is Ownable {
             asset: _asset,       
             analysis: _analysis     
         });
+        emit SignalCreated(nextSignalId, msg.sender, _asset, _targetPrice, _deadline);
 
         nextSignalId++;
         traderStats[msg.sender].totalSignals++;
-        emit SignalCreated(nextSignalId, msg.sender, _asset, _targetPrice, _deadline);
     }
 
     function purchaseSignal(uint256 signalId) public payable onlyActive(signalId) {

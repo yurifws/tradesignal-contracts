@@ -10,7 +10,7 @@ async function main() {
   const deadline = Math.floor(Date.now() / 1000) + 24 * 60 * 60; // 1 day
   
   const tx1 = await SignalMarket.createSignal(
-    "BTC",
+    "ETH",
     70000,
     deadline,
     0,  // Bullish
