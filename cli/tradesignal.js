@@ -377,4 +377,66 @@ program
     }
   });
 
+  // WITHDRAW command
+program
+  .command("withdraw")
+  .description("Withdraw protocol fees (owner only)")
+  .action(async () => {
+    try {
+      console.log(chalk.blue("\nWithdraw Protocol Fees\n"));
+
+      // Check if owner
+      const owner = await contract.owner();
+      if (wallet.address.toLowerCase() !== owner.toLowerCase()) {
+        console.log(chalk.red("Only contract owner can withdraw!"));
+        console.log(chalk.gray(`Owner: ${owner}`));
+        console.log(chalk.gray(`You: ${wallet.address}`));
+        return;
+      }
+
+      // Get contract balance
+      const balance = await provider.getBalance(config.contractAddress);
+      const balanceEth = ethers.formatEther(balance);
+
+      if (balance === 0n) {
+        console.log(chalk.yellow("No fees to withdraw!"));
+        return;
+      }
+
+      console.log(chalk.cyan("Contract Balance:"), `${balanceEth} ETH`);
+      console.log(chalk.gray("(Accumulated protocol fees)\n"));
+
+      // Confirm
+      const { confirm } = await inquirer.prompt([
+        {
+          type: "confirm",
+          name: "confirm",
+          message: `Withdraw ${balanceEth} ETH?`,
+          default: false
+        }
+      ]);
+
+      if (!confirm) {
+        console.log(chalk.yellow("Withdrawal cancelled"));
+        return;
+      }
+
+      const spinner = ora("Withdrawing fees...").start();
+
+      const tx = await contract.withdrawProtocolFees({
+        gasLimit: 100000
+      });
+
+      spinner.text = "Waiting for confirmation...";
+      await tx.wait();
+
+      spinner.succeed(chalk.green("Fees withdrawn!"));
+      console.log(chalk.cyan("Amount:"), `${balanceEth} ETH`);
+      console.log(chalk.cyan("Transaction:"), `https://sepolia.etherscan.io/tx/${tx.hash}`);
+
+    } catch (error) {
+      console.error(chalk.red("\nError:"), error.message);
+    }
+  });
+
 program.parse();
