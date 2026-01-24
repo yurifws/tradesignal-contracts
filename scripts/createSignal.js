@@ -22,7 +22,7 @@ async function main() {
     }
   );
   
-  console.log("⏳ Waiting for confirmation...");
+  console.log("Waiting for confirmation...");
   const receipt = await tx.wait();
   
   console.log("Signal created!");
