@@ -219,4 +219,46 @@ program
     }
   });
 
+// VIEW command
+program
+  .command("view")
+  .description("View signal analysis (requires purchase)")
+  .requiredOption("-i, --id <number>", "Signal ID")
+  .action(async (options) => {
+    try {
+      const signalId = parseInt(options.id);
+      
+      console.log(chalk.blue(`\nSignal #${signalId} Analysis\n`));
+
+      // Check if has access
+      const hasAccess = await contract.signalAccess(signalId, wallet.address);
+      
+      if (!hasAccess) {
+        console.log(chalk.red("Access denied! You need to purchase this signal first."));
+        console.log(chalk.yellow(`\nRun: tradesignal buy --id ${signalId}`));
+        return;
+      }
+
+      const spinner = ora("Loading analysis...").start();
+      
+      const analysis = await contract.getSignalAnalysis(signalId);
+      const signal = await contract.signals(signalId);
+      
+      spinner.stop();
+
+      console.log(chalk.gray("─".repeat(80)));
+      console.log(chalk.cyan("Asset:"), signal.asset);
+      console.log(chalk.cyan("Target:"), `$${signal.targetPrice}`);
+      console.log(chalk.cyan("Direction:"), signal.direction === 0 ? "Bullish" : "Bearish");
+      console.log(chalk.cyan("Trader:"), signal.trader);
+      console.log(chalk.gray("─".repeat(80)));
+      console.log(chalk.white("\nAnalysis:\n"));
+      console.log(chalk.green(analysis));
+      console.log(chalk.gray("\n" + "─".repeat(80)));
+
+    } catch (error) {
+      console.error(chalk.red("\nError:"), error.message);
+    }
+  });
+
 program.parse();
