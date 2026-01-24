@@ -4,7 +4,8 @@
   "scripts": {
     "compile": "hardhat compile",
     "test": "hardhat test",
-    "deploy": "hardhat ignition deploy ..."
+    "deploy": "hardhat ignition deploy ...",
+    "cli": "node cli/tradesignal.js"
   },
   "devDependencies": {
     "@nomicfoundation/hardhat-chai-matchers": "^2.1.0",
@@ -31,6 +32,10 @@
   "dependencies": {
     "@chainlink/contracts": "^1.5.0",
     "@openzeppelin/contracts": "^5.4.0",
-    "dotenv": "^16.4.7"
+    "chalk": "^4.1.2",
+    "commander": "^14.0.2",
+    "dotenv": "^16.4.7",
+    "inquirer": "^8.2.7",
+    "ora": "^5.4.1"
   }
 }
