@@ -377,7 +377,7 @@ program
     }
   });
 
-  // WITHDRAW command
+// WITHDRAW command
 program
   .command("withdraw")
   .description("Withdraw protocol fees (owner only)")
