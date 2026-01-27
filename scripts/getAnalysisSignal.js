@@ -1,16 +1,19 @@
 const hre = require("hardhat");
 
 async function main() {
-  const contractAddress = "0x23ae9ee257069cCcDa0157e2941D5D8ba4394B47";
+  const contractAddress = "0x029BcD216154cD5B488548CC21CC766E01f80db4";
   const signalId = 0;
-  
-  const SignalMarket = await hre.ethers.getContractAt("SignalMarket", contractAddress);
-  
+
+  const SignalMarket = await hre.ethers.getContractAt(
+    "SignalMarket",
+    contractAddress,
+  );
+
   console.log("Getting analysis for signal", signalId);
-  
+
   try {
     const analysis = await SignalMarket.getSignalAnalysis(signalId);
-    
+
     console.log("\nSUCCESS! You have access to the analysis:");
     console.log("─".repeat(60));
     console.log(analysis);

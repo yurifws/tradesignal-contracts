@@ -255,8 +255,8 @@ Para produção, recomenda-se:
 
 ### Sepolia Testnet
 
-- **Contrato**: `0x23ae9ee257069cCcDa0157e2941D5D8ba4394B47`
-- **Etherscan**: https://sepolia.etherscan.io/address/0x23ae9ee257069cCcDa0157e2941D5D8ba4394B47
+- **Contrato**: `0x029BcD216154cD5B488548CC21CC766E01f80db4`
+- **Etherscan**: https://sepolia.etherscan.io/address/0x029BcD216154cD5B488548CC21CC766E01f80db4
 - **Chainlink Price Feed**: `0x694AA1769357215DE4FAC081bf1f309aDC325306`
 
 ### Mainnet
