@@ -134,4 +134,82 @@ describe("SignalMarket", function () {
       ).to.be.revertedWith("Deadline must be in the future");
     });
   });
+
+  describe("Purchase Signal", function () {
+    let signalId;
+    let deadline;
+
+    beforeEach(async function () {
+      deadline = (await time.latest()) + 86400;
+
+      await signalMarket
+        .connect(trader)
+        .createSignal(ASSET, TARGET_PRICE, deadline, 0, SIGNAL_FEE, ANALYSIS, {
+          value: LISTING_FEE,
+        });
+
+      signalId = 0;
+    });
+
+    it("Should purchase signal successfully", async function () {
+      await expect(
+        signalMarket
+          .connect(buyer)
+          .purchaseSignal(signalId, { value: SIGNAL_FEE }),
+      )
+        .to.emit(signalMarket, "SignalPurchased")
+        .withArgs(signalId, buyer.address, SIGNAL_FEE);
+
+      expect(await signalMarket.signalAccess(signalId, buyer.address)).to.be
+        .true;
+    });
+
+    it("Should transfer 95% to trader and keep 5% protocol fee", async function () {
+      const traderBalanceBefore = await ethers.provider.getBalance(
+        trader.address,
+      );
+
+      await signalMarket
+        .connect(buyer)
+        .purchaseSignal(signalId, { value: SIGNAL_FEE });
+
+      const traderBalanceAfter = await ethers.provider.getBalance(
+        trader.address,
+      );
+      const expectedCut = (SIGNAL_FEE * 95n) / 100n;
+
+      expect(traderBalanceAfter - traderBalanceBefore).to.equal(expectedCut);
+    });
+
+    it("Should reject if fee is too low", async function () {
+      await expect(
+        signalMarket
+          .connect(buyer)
+          .purchaseSignal(signalId, { value: ethers.parseEther("0.01") }),
+      ).to.be.revertedWith("Incorrect payment amount");
+    });
+
+    it("Should reject if already purchased", async function () {
+      await signalMarket
+        .connect(buyer)
+        .purchaseSignal(signalId, { value: SIGNAL_FEE });
+
+      await expect(
+        signalMarket
+          .connect(buyer)
+          .purchaseSignal(signalId, { value: SIGNAL_FEE }),
+      ).to.be.revertedWith("Already purchased");
+    });
+
+    it("Should reject if signal is not active", async function () {
+      // Cancel the signal
+      await signalMarket.connect(trader).cancelSignal(signalId);
+
+      await expect(
+        signalMarket
+          .connect(buyer)
+          .purchaseSignal(signalId, { value: SIGNAL_FEE }),
+      ).to.be.revertedWith("Signal is not active");
+    });
+  });
 });
