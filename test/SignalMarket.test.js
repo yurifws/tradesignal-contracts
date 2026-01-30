@@ -212,4 +212,37 @@ describe("SignalMarket", function () {
       ).to.be.revertedWith("Signal is not active");
     });
   });
+
+  describe("Get Signal Analysis", function () {
+    let signalId;
+
+    beforeEach(async function () {
+      const deadline = (await time.latest()) + 86400;
+
+      await signalMarket
+        .connect(trader)
+        .createSignal(ASSET, TARGET_PRICE, deadline, 0, SIGNAL_FEE, ANALYSIS, {
+          value: LISTING_FEE,
+        });
+
+      signalId = 0;
+    });
+
+    it("Should return analysis after purchase", async function () {
+      await signalMarket
+        .connect(buyer)
+        .purchaseSignal(signalId, { value: SIGNAL_FEE });
+
+      const analysis = await signalMarket
+        .connect(buyer)
+        .getSignalAnalysis(signalId);
+      expect(analysis).to.equal(ANALYSIS);
+    });
+
+    it("Should reject if not purchased", async function () {
+      await expect(
+        signalMarket.connect(buyer).getSignalAnalysis(signalId),
+      ).to.be.revertedWith("Must purchase signal first");
+    });
+  });
 });
