@@ -380,4 +380,40 @@ describe("SignalMarket", function () {
       ).to.be.revertedWith("Signal is not active");
     });
   });
+
+  describe("Withdraw Protocol Fees", function () {
+    beforeEach(async function () {
+      const deadline = (await time.latest()) + 86400;
+
+      // Create and purchase signal to generate fees
+      await signalMarket
+        .connect(trader)
+        .createSignal(ASSET, TARGET_PRICE, deadline, 0, SIGNAL_FEE, ANALYSIS, {
+          value: LISTING_FEE,
+        });
+
+      await signalMarket
+        .connect(buyer)
+        .purchaseSignal(0, { value: SIGNAL_FEE });
+    });
+
+    it("Should allow owner to withdraw fees", async function () {
+      const contractBalance = await ethers.provider.getBalance(
+        await signalMarket.getAddress(),
+      );
+
+      await expect(signalMarket.connect(owner).withdrawProtocolFees())
+        .to.emit(signalMarket, "ProtocolFeesWithdrawn")
+        .withArgs(owner.address, contractBalance);
+    });
+
+    it("Should reject non-owner", async function () {
+      await expect(
+        signalMarket.connect(trader).withdrawProtocolFees(),
+      ).to.be.revertedWithCustomError(
+        signalMarket,
+        "OwnableUnauthorizedAccount",
+      );
+    });
+  });
 });
