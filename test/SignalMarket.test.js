@@ -245,4 +245,98 @@ describe("SignalMarket", function () {
       ).to.be.revertedWith("Must purchase signal first");
     });
   });
+
+  describe("Resolve Signal", function () {
+    let signalId;
+    let deadline;
+
+    beforeEach(async function () {
+      deadline = (await time.latest()) + 86400;
+
+      await signalMarket
+        .connect(trader)
+        .createSignal(ASSET, TARGET_PRICE, deadline, 0, SIGNAL_FEE, ANALYSIS, {
+          value: LISTING_FEE,
+        });
+
+      signalId = 0;
+    });
+
+    it("Should resolve bullish signal as correct", async function () {
+      // Price goes above target
+      await mockPriceFeed.updateAnswer(3600_00000000);
+      await time.increaseTo(deadline + 1);
+
+      await expect(signalMarket.resolveSignal(signalId))
+        .to.emit(signalMarket, "SignalResolved")
+        .withArgs(signalId, true, 3600);
+
+      const signal = await signalMarket.signals(signalId);
+      expect(signal.status).to.equal(1); // Resolved
+      expect(signal.isCorrect).to.be.true;
+    });
+
+    it("Should resolve bullish signal as incorrect", async function () {
+      // Price stays below target
+      await mockPriceFeed.updateAnswer(2900_00000000);
+      await time.increaseTo(deadline + 1);
+
+      await signalMarket.resolveSignal(signalId);
+
+      const signal = await signalMarket.signals(signalId);
+      expect(signal.isCorrect).to.be.false;
+    });
+
+    it("Should resolve bearish signal correctly", async function () {
+      // Create bearish signal
+      deadline = (await time.latest()) + 86400;
+      await signalMarket
+        .connect(trader)
+        .createSignal(ASSET, TARGET_PRICE, deadline, 1, SIGNAL_FEE, ANALYSIS, {
+          value: LISTING_FEE,
+        });
+
+      // Price goes down
+      await mockPriceFeed.updateAnswer(2900_00000000);
+      await time.increaseTo(deadline + 1);
+
+      await signalMarket.resolveSignal(1);
+
+      const signal = await signalMarket.signals(1);
+      expect(signal.isCorrect).to.be.true;
+    });
+
+    it("Should update trader stats on correct prediction", async function () {
+      await mockPriceFeed.updateAnswer(3600_00000000);
+      await time.increaseTo(deadline + 1);
+      await signalMarket.resolveSignal(signalId);
+
+      const stats = await signalMarket.traderStats(trader.address);
+      expect(stats.correctSignals).to.equal(1);
+    });
+
+    it("Should not update correct count on incorrect prediction", async function () {
+      await mockPriceFeed.updateAnswer(2900_00000000);
+      await time.increaseTo(deadline + 1);
+      await signalMarket.resolveSignal(signalId);
+
+      const stats = await signalMarket.traderStats(trader.address);
+      expect(stats.correctSignals).to.equal(0);
+    });
+
+    it("Should reject if deadline not passed", async function () {
+      await expect(signalMarket.resolveSignal(signalId)).to.be.revertedWith(
+        "Deadline not passed yet",
+      );
+    });
+
+    it("Should reject if already resolved", async function () {
+      await time.increaseTo(deadline + 1);
+      await signalMarket.resolveSignal(signalId);
+
+      await expect(signalMarket.resolveSignal(signalId)).to.be.revertedWith(
+        "Signal is not active",
+      );
+    });
+  });
 });
