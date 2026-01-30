@@ -339,4 +339,45 @@ describe("SignalMarket", function () {
       );
     });
   });
+
+  describe("Cancel Signal", function () {
+    let signalId;
+
+    beforeEach(async function () {
+      const deadline = (await time.latest()) + 86400;
+
+      await signalMarket
+        .connect(trader)
+        .createSignal(ASSET, TARGET_PRICE, deadline, 0, SIGNAL_FEE, ANALYSIS, {
+          value: LISTING_FEE,
+        });
+
+      signalId = 0;
+    });
+
+    it("Should allow trader to cancel their signal", async function () {
+      await expect(signalMarket.connect(trader).cancelSignal(signalId))
+        .to.emit(signalMarket, "SignalCancelled")
+        .withArgs(signalId, trader.address);
+
+      const signal = await signalMarket.signals(signalId);
+      expect(signal.status).to.equal(3); // Cancelled
+    });
+
+    it("Should reject if not the trader", async function () {
+      await expect(
+        signalMarket.connect(buyer).cancelSignal(signalId),
+      ).to.be.revertedWith("Only trader can cancel");
+    });
+
+    it("Should reject if already resolved", async function () {
+      const deadline = (await time.latest()) + 86400;
+      await time.increaseTo(deadline + 86401);
+      await signalMarket.resolveSignal(signalId);
+
+      await expect(
+        signalMarket.connect(trader).cancelSignal(signalId),
+      ).to.be.revertedWith("Signal is not active");
+    });
+  });
 });
